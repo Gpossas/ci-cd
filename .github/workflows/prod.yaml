@@ -32,6 +32,6 @@ jobs:
         steps:
             - name: Push image to Docker Hub
               run: |
-                  echo ${{ secrets.DOCKER_ACCESS_TOKEN }} | docker login -u $DOCKER_USERNAME --password-stdin                  
-                  docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest .
-                  docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME
+                  echo ${{ secrets.DOCKER_ACCESS_TOKEN }} | docker login -u ${{ vars.DOCKER_USERNAME }} --password-stdin                  
+                  docker build -t ${{ vars.DOCKER_USERNAME }}/{{ vars.DOCKER_IMAGE_NAME }}:latest .
+                  docker push ${{ vars.DOCKER_USERNAME }}/{{ vars.DOCKER_IMAGE_NAME }}
