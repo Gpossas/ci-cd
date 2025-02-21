@@ -30,3 +30,37 @@ jobs:
                 echo ${{ secrets.DOCKER_ACCESS_TOKEN }} | docker login -u ${{ vars.DOCKER_USERNAME }} --password-stdin
                 docker build --platform linux/arm64 -t ${{ vars.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest .
                 docker push ${{ vars.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+
+    deploy:
+      name: Deploy application to Amazon ECS
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+        - name: Authenticate to AWS
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ vars.AWS_REGION }}
+
+        - name: Download task definition
+          run: |
+            aws ecs describe-task-definition \ 
+            --task-definition ${{ vars.ECS_TASK_DEFINITION_FAMILY_NAME }} \
+            --query taskDefinition > task-definition.json
+
+        - name: Update ECS task definition with new image
+          id: ecs-task-definition
+          uses: aws-actions/amazon-ecs-render-task-definition@v1
+          with:
+            task-definition: task-definition.json
+            container-name: ${{ vars.ECS_CONTAINER_NAME }}
+            image: ${{ vars.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+
+        - name: Deploy Amazon ECS task definition
+          uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+          with:
+            task-definition: ${{ steps.ecs-task-definition.outputs.task-definition }}
+            cluster: ${{ vars.ECS_CLUSTER_NAME }}
+            service: ${{ vars.ECS_SERVICE_NAME }}
+            wait-for-service-stability: true
