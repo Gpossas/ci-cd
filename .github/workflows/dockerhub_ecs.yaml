@@ -3,10 +3,10 @@ name: CI/CD -> Docker Hub and Amazon ECS
 on:
     push:
         branches:
-            - main
+            - no-ecr
     pull_request:
         branches:
-            - main
+            - no-ecr
 
 jobs:
     build:
